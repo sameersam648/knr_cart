@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ScrollView, Text, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, Redirect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/Button";
@@ -8,9 +8,14 @@ import { Input } from "@/components/ui/Input";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isSignedIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Redirect authenticated users to tabs
+  if (isSignedIn) {
+    return <Redirect href="/(tabs)" />;
+  }
 
   const handleLogin = async () => {
     try {

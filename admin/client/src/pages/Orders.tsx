@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Search, Eye } from "lucide-react";
 import { toast } from "sonner";
 
+// Import from shared constants (will need to copy/symlink shared folder to admin)
 const ORDER_STATUSES = [
   "pending",
   "confirmed",
@@ -24,7 +25,7 @@ const ORDER_STATUSES = [
   "delivered",
   "cancelled",
   "refunded",
-];
+] as const;
 
 export default function Orders() {
   const [search, setSearch] = useState("");
@@ -179,8 +180,8 @@ export default function Orders() {
                           </td>
                           <td className="py-3 px-4">
                             <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${order.paymentStatus === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
                               }`}>
                               {order.paymentStatus}
                             </span>

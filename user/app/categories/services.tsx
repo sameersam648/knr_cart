@@ -8,8 +8,22 @@ export default function ServicesScreen() {
     const router = useRouter();
     const [showMeatsSubmenu, setShowMeatsSubmenu] = useState(false);
 
-    const handleServicePress = (service: typeof serviceItems[0]) => {
-        if (service.hasSubmenu) {
+    // Add Fresh Vegetables as the first service item
+    const allServiceItems = [
+        {
+            id: 'vegetables',
+            name: 'Fresh Vegetables',
+            description: 'Same-day delivery of fresh vegetables',
+            image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop',
+            hasSubmenu: false,
+        },
+        ...serviceItems,
+    ];
+
+    const handleServicePress = (service: any) => {
+        if (service.id === 'vegetables') {
+            router.push('/categories/vegetables');
+        } else if (service.hasSubmenu) {
             setShowMeatsSubmenu(!showMeatsSubmenu);
         } else {
             // Navigate to service detail or handle service selection
@@ -32,7 +46,7 @@ export default function ServicesScreen() {
 
             {/* Service Items */}
             <FlatList
-                data={serviceItems}
+                data={allServiceItems}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <View className="mx-4 mb-4">
@@ -63,7 +77,7 @@ export default function ServicesScreen() {
                         {/* Meats Submenu */}
                         {item.hasSubmenu && showMeatsSubmenu && item.submenuItems && (
                             <View className="mt-2 ml-4 bg-surface border border-border rounded-lg overflow-hidden">
-                                {item.submenuItems.map((submenu) => (
+                                {item.submenuItems.map((submenu: any) => (
                                     <TouchableOpacity
                                         key={submenu.id}
                                         className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted/20"

@@ -1,133 +1,76 @@
-import React, { createContext, useContext, useState } from "react";
-
-export type OrderStatus = "pending" | "accepted" | "reached_restaurant" | "picked_up" | "on_the_way" | "delivered" | "cancelled";
-
-export interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
-export interface Order {
-  id: string;
-  restaurantName: string;
-  restaurantAddress: string;
-  restaurantLat: number;
-  restaurantLng: number;
-  customerName: string;
-  customerPhone: string;
-  deliveryAddress: string;
-  deliveryLat: number;
-  deliveryLng: number;
-  items: OrderItem[];
-  specialInstructions?: string;
-  estimatedDistance: number; // in km
-  estimatedEarnings: number;
-  status: OrderStatus;
-  acceptedAt?: Date;
-  deliveredAt?: Date;
-  createdAt: Date;
-}
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { Order, OrderStatus } from "@/shared/types";
+import * as orderService from "./services/order-service";
 
 export interface OrderContextType {
   availableOrders: Order[];
   activeOrder: Order | null;
   completedOrders: Order[];
-  acceptOrder: (orderId: string) => void;
-  rejectOrder: (orderId: string) => void;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  isLoading: boolean;
+  acceptOrder: (orderId: string) => Promise<void>;
+  rejectOrder: (orderId: string) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   getOrderById: (orderId: string) => Order | undefined;
-  addMockOrders: () => void;
+  addMockOrders: () => Promise<void>;
+  refreshOrders: () => Promise<void>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-// Mock order data generator
-const generateMockOrders = (): Order[] => {
-  const restaurants = [
-    { name: "Pizza Palace", address: "123 Main St", lat: 40.7128, lng: -74.006 },
-    { name: "Burger Barn", address: "456 Oak Ave", lat: 40.758, lng: -73.9855 },
-    { name: "Sushi Supreme", address: "789 Park Blvd", lat: 40.7489, lng: -73.9680 },
-    { name: "Taco Fiesta", address: "321 Elm St", lat: 40.7614, lng: -73.9776 },
-  ];
-
-  const customers = [
-    { name: "John Doe", phone: "+1234567890", address: "100 Broadway", lat: 40.7505, lng: -73.9972 },
-    { name: "Jane Smith", phone: "+1234567891", address: "200 5th Ave", lat: 40.7549, lng: -73.9840 },
-    { name: "Bob Johnson", phone: "+1234567892", address: "300 Madison Ave", lat: 40.7535, lng: -73.9822 },
-    { name: "Alice Williams", phone: "+1234567893", address: "400 Park Ave", lat: 40.7614, lng: -73.9776 },
-  ];
-
-  const items = [
-    { id: "1", name: "Margherita Pizza", quantity: 1, price: 12.99 },
-    { id: "2", name: "Cheeseburger", quantity: 2, price: 8.99 },
-    { id: "3", name: "California Roll", quantity: 1, price: 9.99 },
-    { id: "4", name: "Carne Asada Tacos", quantity: 3, price: 3.99 },
-  ];
-
-  return Array.from({ length: 5 }, (_, i) => {
-    const restaurant = restaurants[i % restaurants.length];
-    const customer = customers[i % customers.length];
-    const distance = Math.random() * 5 + 1; // 1-6 km
-
-    return {
-      id: `order_${i + 1}`,
-      restaurantName: restaurant.name,
-      restaurantAddress: restaurant.address,
-      restaurantLat: restaurant.lat + Math.random() * 0.01,
-      restaurantLng: restaurant.lng + Math.random() * 0.01,
-      customerName: customer.name,
-      customerPhone: customer.phone,
-      deliveryAddress: customer.address,
-      deliveryLat: customer.lat + Math.random() * 0.01,
-      deliveryLng: customer.lng + Math.random() * 0.01,
-      items: [items[i % items.length]],
-      specialInstructions: i % 3 === 0 ? "Ring doorbell twice" : undefined,
-      estimatedDistance: Math.round(distance * 10) / 10,
-      estimatedEarnings: Math.round(distance * 2.5 * 100) / 100,
-      status: "pending",
-      createdAt: new Date(Date.now() - i * 300000), // Stagger by 5 minutes
-    };
-  });
-};
-
 export function OrderProvider({ children }: { children: React.ReactNode }) {
-  const [availableOrders, setAvailableOrders] = useState<Order[]>(generateMockOrders());
+  const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const acceptOrder = (orderId: string) => {
-    const order = availableOrders.find((o) => o.id === orderId);
-    if (order) {
-      const acceptedOrder = {
-        ...order,
-        status: "accepted" as OrderStatus,
-        acceptedAt: new Date(),
-      };
-      setActiveOrder(acceptedOrder);
-      setAvailableOrders(availableOrders.filter((o) => o.id !== orderId));
+  // Load orders on mount
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      setIsLoading(true);
+      const [available, active, completed] = await Promise.all([
+        orderService.getAvailableOrders(),
+        orderService.getActiveOrder(),
+        orderService.getCompletedOrders(),
+      ]);
+
+      setAvailableOrders(available);
+      setActiveOrder(active);
+      setCompletedOrders(completed);
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const rejectOrder = (orderId: string) => {
-    setAvailableOrders(availableOrders.filter((o) => o.id !== orderId));
+  const acceptOrder = async(order Id: string) => {
+    try {
+      await orderService.acceptOrder(orderId);
+      await loadOrders(); // Refresh to get updated state
+    } catch (error) {
+      console.error('Failed to accept order:', error);
+    }
   };
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    if (activeOrder && activeOrder.id === orderId) {
-      const updatedOrder = {
-        ...activeOrder,
-        status,
-        deliveredAt: status === "delivered" ? new Date() : activeOrder.deliveredAt,
-      };
-      setActiveOrder(updatedOrder);
+  const rejectOrder = async (orderId: string) => {
+    try {
+      await orderService.rejectOrder(orderId);
+      setAvailableOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (error) {
+      console.error('Failed to reject order:', error);
+    }
+  };
 
-      // Move to completed orders if delivered
-      if (status === "delivered" || status === "cancelled") {
-        setCompletedOrders([...completedOrders, updatedOrder]);
-        setActiveOrder(null);
-      }
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    try {
+      await orderService.updateOrderStatus(orderId, status);
+      await loadOrders(); // Refresh to get updated state
+    } catch (error) {
+      console.error('Failed to update order status:', error);
     }
   };
 
@@ -138,19 +81,30 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     return completedOrders.find((o) => o.id === orderId);
   };
 
-  const addMockOrders = () => {
-    setAvailableOrders([...availableOrders, ...generateMockOrders()]);
+  const addMockOrders = async () => {
+    try {
+      await orderService.addMockOrders();
+      await loadOrders();
+    } catch (error) {
+      console.error('Failed to add mock orders:', error);
+    }
+  };
+
+  const refreshOrders = async () => {
+    await loadOrders();
   };
 
   const value: OrderContextType = {
     availableOrders,
     activeOrder,
     completedOrders,
+    isLoading,
     acceptOrder,
     rejectOrder,
     updateOrderStatus,
     getOrderById,
     addMockOrders,
+    refreshOrders,
   };
 
   return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;

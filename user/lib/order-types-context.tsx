@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { OrderType, SubscriptionData, CustomOrderData } from "./mock-data";
+import { OrderType, SubscriptionData, CustomOrderData } from "@/shared/types";
 
 interface OrderTypesContextType {
     orderType: OrderType;
@@ -24,7 +24,7 @@ export function OrderTypesProvider({ children }: { children: React.ReactNode }) 
     const setOrderType = (type: OrderType) => {
         // Reset type-specific data when switching order types
         if (type !== 'scheduled') setScheduledDateTime(null);
-        if (type !== 'regular') setSubscriptionData(null);
+        if (type !== 'subscription') setSubscriptionData(null);
         if (type !== 'custom') setCustomOrderData(null);
         setOrderTypeState(type);
     };

@@ -53,6 +53,10 @@ export interface CustomOrderData {
   description?: string;
 }
 
+import { lunchRestaurants } from "./lunch-menu-data";
+import { bakeryRestaurants } from "./bakery-data";
+import { iceMagicRestaurants } from "./ice-magic-data";
+
 // Mock restaurant data - Real breakfast restaurants only
 export const mockRestaurants: Restaurant[] = [
 
@@ -1270,4 +1274,9 @@ export const mockRestaurants: Restaurant[] = [
       },
     ],
   },
+
+  // LUNCH MENUS - imported from lunch-menu-data.ts
+  ...lunchRestaurants,
+  ...bakeryRestaurants,
+  ...iceMagicRestaurants,
 ];

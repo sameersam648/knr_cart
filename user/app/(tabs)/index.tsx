@@ -1,7 +1,6 @@
-import { FlatList, Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { mockRestaurants } from "@/lib/mock-data";
 import { useCart } from "@/lib/cart-context";
 import { SearchBar } from "@/components/search-bar";
 import { OrderTypeSelector } from "@/components/order-type-selector";
@@ -9,10 +8,11 @@ import { ScheduledOrderModal } from "@/components/scheduled-order-modal";
 import { SubscriptionModal } from "@/components/subscription-modal";
 import { CustomOrderModal } from "@/components/custom-order-modal";
 import { FoodCategoryGrid } from "@/components/food-category-grid";
-import { useState } from "react";
-import { OrderType } from "@/lib/mock-data";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Ionicons } from "@expo/vector-icons";
+import { Restaurant, OrderType } from "@/shared/types";
+import * as restaurantService from "@/lib/services/restaurant-service";
 
 const PROMO_BANNERS = [
   { id: '1', title: '50% OFF', subtitle: 'On your first order', color: 'bg-primary', icon: 'fast-food' },
@@ -27,10 +27,30 @@ export default function HomeScreen() {
   const [showScheduledModal, setShowScheduledModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const cartCount = items.length;
 
-  const filteredRestaurants = mockRestaurants.filter((restaurant) => {
+  // Load restaurants on mount
+  useEffect(() => {
+    loadRestaurants();
+  }, []);
+
+  const loadRestaurants = async () => {
+    try {
+      setIsLoading(true);
+      // Get only nearby restaurants from breakfast, lunch, bakery, and ice-cream categories
+      const data = await restaurantService.getNearbyRestaurants();
+      setRestaurants(data);
+    } catch (error) {
+      console.error("Failed to load restaurants:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredRestaurants = restaurants.filter((restaurant) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -137,16 +157,23 @@ export default function HomeScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View className="items-center justify-center py-16 opacity-70">
-            <Ionicons name="restaurant-outline" size={48} color="#94A3B8" className="mb-2" />
-            <Text className="text-muted text-base font-medium">No restaurants found</Text>
-            <Text className="text-muted text-sm mt-1">Try searching for something else</Text>
-          </View>
+          isLoading ? (
+            <View className="items-center justify-center py-16">
+              <ActivityIndicator size="large" color="#FF6B35" />
+              <Text className="text-muted text-base font-medium mt-4">Loading restaurants...</Text>
+            </View>
+          ) : (
+            <View className="items-center justify-center py-16 opacity-70">
+              <Ionicons name="restaurant-outline" size={48} color="#94A3B8" className="mb-2" />
+              <Text className="text-muted text-base font-medium">No restaurants found</Text>
+              <Text className="text-muted text-sm mt-1">Try searching for something else</Text>
+            </View>
+          )
         }
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => handleRestaurantPress(item.id)}
-            className="px-4 mb-6 active:scale-[0.99] transition-all"
+            className="px-4 mb-6 active:scale-[0.99]"
           >
             <Card className="p-0 overflow-hidden border-0 shadow-sm bg-surface rounded-2xl">
               {/* Image Container */}
@@ -214,7 +241,7 @@ export default function HomeScreen() {
         onClose={() => setShowSubscriptionModal(false)}
         onConfirm={(data) => {
           setSubscriptionData(data);
-          setOrderType('regular');
+          setOrderType('subscription');
         }}
       />
 

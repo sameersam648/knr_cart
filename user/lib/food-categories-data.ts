@@ -123,6 +123,15 @@ export const categoryHotels: Record<string, Hotel[]> = {
             deliveryTime: '35-45 min',
             type: ['VEG'],
         },
+        {
+            id: 'gani-veg-lunch',
+            name: 'Gani Family Restaurant - Veg',
+            image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop',
+            rating: 4.3,
+            description: 'Pure vegetarian South & North Indian cuisine',
+            deliveryTime: '30-45 min',
+            type: ['VEG'],
+        },
     ],
 
     // LUNCH - NON-VEG
@@ -137,11 +146,11 @@ export const categoryHotels: Record<string, Hotel[]> = {
             type: ['NON-VEG'],
         },
         {
-            id: 'ganis-family',
-            name: "Gani's Family Resturents",
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
+            id: 'gani-nonveg-lunch',
+            name: "Gani's Family Restaurants - Non Veg",
+            image: 'https://images.unsplash.com/photo-1606471191009-63994c53433b?w=400&h=300&fit=crop',
             rating: 4.5,
-            description: 'Family restaurant',
+            description: 'Special Non-Veg Starters, Biryani & Meals',
             deliveryTime: '35-45 min',
             type: ['NON-VEG'],
         },
@@ -168,12 +177,12 @@ export const categoryHotels: Record<string, Hotel[]> = {
             type: ['EGG'],
         },
         {
-            id: 'ganis-family-egg',
-            name: "Gani's Family Resturents",
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
-            rating: 4.5,
-            description: 'Egg preparations',
-            deliveryTime: '35-45 min',
+            id: 'gani-egg-lunch',
+            name: "Gani's Family Restaurants - Egg Special",
+            image: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400&h=300&fit=crop",
+            rating: 4.4,
+            description: 'Special Egg Curry, Pulao & More',
+            deliveryTime: '30-45 min',
             type: ['EGG'],
         },
         {
@@ -190,7 +199,7 @@ export const categoryHotels: Record<string, Hotel[]> = {
     // DINNER - VEG
     'dinner-veg': [
         {
-            id: 'udupi-dinner',
+            id: 'udupi-lunch',
             name: 'Udupi Hotel',
             image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
             rating: 4.5,
@@ -220,15 +229,6 @@ export const categoryHotels: Record<string, Hotel[]> = {
 
     // DINNER - NON-VEG
     'dinner-nonveg': [
-        {
-            id: 'gowda-palav-dinner',
-            name: 'Gowda Palav',
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
-            rating: 4.6,
-            description: 'Special non-veg dinner',
-            deliveryTime: '40-50 min',
-            type: ['NON-VEG'],
-        },
         {
             id: 'ganis-family-dinner',
             name: "Gani's Family Resturents",
@@ -261,11 +261,11 @@ export const categoryHotels: Record<string, Hotel[]> = {
             type: ['EGG'],
         },
         {
-            id: 'ganis-family-egg-dinner',
-            name: "Gani's Family Resturents",
-            image: 'https://images.unsplash.com/photo-1585937421612-70a19fb6930b?w=400&h=300&fit=crop',
-            rating: 4.5,
-            description: 'Egg dinner options',
+            id: 'gani-egg-lunch',
+            name: "Gani's Family Restaurants - Egg Special",
+            image: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400&h=300&fit=crop",
+            rating: 4.4,
+            description: 'Special Egg Curry, Pulao & More',
             deliveryTime: '35-45 min',
             type: ['EGG'],
         },

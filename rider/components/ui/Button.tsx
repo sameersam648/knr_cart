@@ -24,7 +24,7 @@ export function Button({
     disabled,
     ...props
 }: ButtonProps) {
-    const baseStyles = 'flex-row items-center justify-center rounded-xl transition-all active:opacity-80';
+    const baseStyles = 'flex-row items-center justify-center rounded-xl active:opacity-80';
 
     const variants = {
         primary: 'bg-primary shadow-md shadow-primary/30',

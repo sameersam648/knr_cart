@@ -1,10 +1,11 @@
-import { FlatList, Image, Text, TouchableOpacity, View, StyleSheet, Animated } from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View, StyleSheet, Animated, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { mockRestaurants, MenuItem as MenuItemType } from "@/lib/mock-data";
 import { useCart } from "@/lib/cart-context";
 import { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { Restaurant, MenuItem as MenuItemType } from "@/shared/types";
+import * as restaurantService from "@/lib/services/restaurant-service";
 
 // Toast notification component
 const Toast = memo(function Toast({
@@ -163,8 +164,26 @@ export default function RestaurantMenuScreen() {
   const [quantity, setQuantity] = useState(1);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const restaurant = mockRestaurants.find((r) => r.id === id);
+  // Load restaurant data
+  useEffect(() => {
+    loadRestaurant();
+  }, [id]);
+
+  const loadRestaurant = async () => {
+    try {
+      setIsLoading(true);
+      const data = await restaurantService.getRestaurantById(id);
+      setRestaurant(data);
+    } catch (error) {
+      console.error("Failed to load restaurant:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const showToast = useCallback((itemName: string, qty: number) => {
     setToastMessage(`${qty}x ${itemName} added to cart! 🛒`);
@@ -177,7 +196,7 @@ export default function RestaurantMenuScreen() {
 
   const handleAddToCart = useCallback((itemId: string) => {
     if (!restaurant) return;
-    const menuItem = restaurant.items.find((item) => item.id === itemId);
+    const menuItem = restaurant.items?.find((item) => item.id === itemId);
     if (menuItem) {
       addItem(restaurant.id, menuItem, quantity);
       showToast(menuItem.name, quantity);
@@ -195,6 +214,15 @@ export default function RestaurantMenuScreen() {
     }
   }, [selectedItem]);
 
+  if (isLoading) {
+    return (
+      <ScreenContainer className="bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#FF6B35" />
+        <Text className="text-muted text-base font-medium mt-4">Loading restaurant...</Text>
+      </ScreenContainer>
+    );
+  }
+
   if (!restaurant) {
     return (
       <ScreenContainer className="bg-background items-center justify-center">
@@ -203,13 +231,32 @@ export default function RestaurantMenuScreen() {
     );
   }
 
+  // Get unique categories from menu items
+  const categories = (restaurant.items || []).reduce((acc, item) => {
+    if (item.category && !acc.find(c => c.name === item.category)) {
+      acc.push({
+        name: item.category,
+        count: (restaurant.items || []).filter(i => i.category === item.category).length
+      });
+    }
+    return acc;
+  }, [] as { name: string; count: number }[]);
+
+  // Check if this restaurant should use category selection
+  const useCategorySelection = id === 'udupi-lunch' && categories.length > 5;
+
+  // Filter items by selected category
+  const displayItems = selectedCategory
+    ? (restaurant.items || []).filter(item => item.category === selectedCategory)
+    : (restaurant.items || []);
+
   return (
     <ScreenContainer className="bg-background" edges={["top", "left", "right"]}>
       {/* Toast Notification */}
       <Toast visible={toastVisible} message={toastMessage} onHide={hideToast} />
 
       <FlatList
-        data={restaurant.items}
+        data={displayItems}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <>
@@ -218,7 +265,13 @@ export default function RestaurantMenuScreen() {
               <Image source={{ uri: restaurant.image }} className="w-full h-64 bg-muted/20" resizeMode="cover" />
               <View className="absolute top-4 left-4 z-10">
                 <TouchableOpacity
-                  onPress={() => router.back()}
+                  onPress={() => {
+                    if (selectedCategory) {
+                      setSelectedCategory(null);
+                    } else {
+                      router.back();
+                    }
+                  }}
                   className="bg-white/90 p-2 rounded-full shadow-sm backdrop-blur-md active:bg-white"
                 >
                   <Ionicons name="arrow-back" size={24} color="#0F172A" />
@@ -252,19 +305,74 @@ export default function RestaurantMenuScreen() {
               </View>
             </View>
 
-            <Text className="px-5 mt-6 mb-3 text-lg font-bold text-foreground">Menu</Text>
+            {/* Category Grid or Section Title */}
+            {useCategorySelection && !selectedCategory ? (
+              <View className="px-5 mt-6 mb-2">
+                <Text className="text-lg font-bold text-foreground mb-4">Categories</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.name}
+                      onPress={() => setSelectedCategory(cat.name)}
+                      style={styles.categoryCard}
+                    >
+                      <View style={[styles.categoryIcon, { backgroundColor: '#FF6B3515' }]}>
+                        <Text style={{ fontSize: 24 }}>
+                          {cat.name.includes('MEALS') ? '🍛' :
+                            cat.name.includes('SOUP') ? '🥣' :
+                              cat.name.includes('RAITHA') ? '🥙' :
+                                cat.name.includes('SALAD') ? '🥗' :
+                                  cat.name.includes('GRAVY') ? '🥘' :
+                                    cat.name.includes('BIRIYANI') ? '🍚' :
+                                      cat.name.includes('BREAD') ? '🫓' :
+                                        cat.name.includes('RICE') ? '🥡' :
+                                          cat.name.includes('DOSA') ? '🥞' :
+                                            cat.name.includes('SWEET') ? '🍧' : '🍽️'}
+                        </Text>
+                      </View>
+                      <Text style={styles.categoryTitle} numberOfLines={2}>{cat.name}</Text>
+                      <Text style={styles.categoryCount}>{cat.count} items</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View className="px-5 mt-6 mb-3 flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  {selectedCategory && (
+                    <TouchableOpacity
+                      onPress={() => setSelectedCategory(null)}
+                      className="mr-3 p-1 rounded-full bg-muted/10"
+                    >
+                      <Ionicons name="arrow-back" size={20} color="#0F172A" />
+                    </TouchableOpacity>
+                  )}
+                  <Text className="text-lg font-bold text-foreground">
+                    {selectedCategory || "Menu"}
+                  </Text>
+                </View>
+                {selectedCategory && (
+                  <Text className="text-sm text-muted">{displayItems.length} items</Text>
+                )}
+              </View>
+            )}
           </>
         }
-        renderItem={({ item }) => (
-          <MenuItemCard
-            item={item}
-            isSelected={selectedItem === item.id}
-            quantity={quantity}
-            onSelect={() => handleSelect(item.id)}
-            onQuantityChange={setQuantity}
-            onAddToCart={() => handleAddToCart(item.id)}
-          />
-        )}
+        renderItem={({ item }) => {
+          // If in category mode and no category selected, don't render items
+          if (useCategorySelection && !selectedCategory) return null;
+
+          return (
+            <MenuItemCard
+              item={item}
+              isSelected={selectedItem === item.id}
+              quantity={quantity}
+              onSelect={() => handleSelect(item.id)}
+              onQuantityChange={setQuantity}
+              onAddToCart={() => handleAddToCart(item.id)}
+            />
+          );
+        }}
         scrollEnabled={true}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -272,6 +380,8 @@ export default function RestaurantMenuScreen() {
     </ScreenContainer>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   // Toast styles
@@ -434,4 +544,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
+  // Category Grid Styles
+  categoryCard: {
+    width: '31%', // roughly 3 columns with gap
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 4,
+  },
+  categoryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  categoryTitle: {
+    color: '#F8FAFC',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
+    height: 32, // fixed height for 2 lines
+  },
+  categoryCount: {
+    color: '#9CA3AF',
+    fontSize: 10,
+  }
 });

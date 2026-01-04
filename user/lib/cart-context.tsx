@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CartItem, MenuItem, OrderType, SubscriptionData, CustomOrderData } from "./mock-data";
+import {
+  CartItem,
+  MenuItem,
+  OrderType,
+  SubscriptionData,
+  CustomOrderData,
+  DEFAULT_DELIVERY_FEE,
+  DEFAULT_TAX_RATE,
+} from "@/shared/types";
 
 interface CartContextType {
   items: CartItem[];
@@ -24,9 +32,6 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
-
-const DELIVERY_FEE = 50;
-const TAX_RATE = 0.05; // 5% tax
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -119,11 +124,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getTax = () => {
-    return Math.round(getSubtotal() * TAX_RATE);
+    return Math.round(getSubtotal() * DEFAULT_TAX_RATE);
   };
 
   const getDeliveryFee = () => {
-    return items.length > 0 ? DELIVERY_FEE : 0;
+    return items.length > 0 ? DEFAULT_DELIVERY_FEE : 0;
   };
 
   const getTotal = () => {
